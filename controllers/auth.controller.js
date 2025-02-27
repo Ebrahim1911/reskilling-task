@@ -9,6 +9,17 @@ export const signup = async (req, res) => {
 		if (!email || !password || !name) {
 			throw new Error("All fields are required");
 		}
+
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!emailRegex.test(email)) {
+			throw new Error("Invalid email format");
+		}
+
+		const nameRegex = /^[a-zA-Z\s]+$/;
+		if (!nameRegex.test(name)) {
+			throw new Error("Name must contain only letters and spaces");
+		}
+
 		const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 		if (!passwordRegex.test(password)) {
 			throw new Error("Password must be at least 8 characters long and contain both letters and numbers");
@@ -17,7 +28,7 @@ export const signup = async (req, res) => {
 		const userAlreadyExists = await User.findOne({ email });
 
 		if (userAlreadyExists) {
-			return res.status(400).json({ success: false, message: "User already exists" });
+			return res.status(400).json({ success: false, message: "Invalid credentials" });
 		}
 
 		const hashedPassword = await bcryptjs.hash(password, 12);
@@ -40,9 +51,11 @@ export const signup = async (req, res) => {
 			},
 		});
 	} catch (error) {
-		res.status(400).json({ success: false, message: error.message });
+		console.error("Signup Error:", error.message); 
+		res.status(500).json({ success: false, message: "Server error. Please try again later." });
 	}
 };
+
 
 
 export const login = async (req, res) => {
@@ -52,6 +65,7 @@ export const login = async (req, res) => {
 		if (!user) {
 			return res.status(400).json({ success: false, message: "Invalid credentials" });
 		}
+
 		const isPasswordValid = await bcryptjs.compare(password, user.password);
 		if (!isPasswordValid) {
 			return res.status(400).json({ success: false, message: "Invalid credentials" });
@@ -71,7 +85,8 @@ export const login = async (req, res) => {
 			},
 		});
 	} catch (error) {
-		console.log("Error in login ", error);
-		res.status(400).json({ success: false, message: error.message });
+		console.error("Login Error:", error.message);
+		res.status(500).json({ success: false, message: "Server error. Please try again later." });
 	}
 };
+
